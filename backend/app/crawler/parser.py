@@ -1,6 +1,5 @@
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
-from typing import Optional
 
 def parse_page(html: str, base_url: str) -> dict:
     soup = BeautifulSoup(html, "lxml")
@@ -10,23 +9,47 @@ def parse_page(html: str, base_url: str) -> dict:
     if soup.title and soup.title.string:
         title = soup.title.string.strip()
 
-    # Clean content — remove scripts/styles
-    for tag in soup(["script", "style", "nav", "footer", "header"]):
+    # Extract headings explicitly
+    headings = []
+    for tag in soup.find_all(["h1", "h2", "h3"]):
+        text = tag.get_text(strip=True)
+        if text:
+            headings.append(f"[{tag.name.upper()}] {text}")
+
+    # Extract meta description
+    meta_desc = ""
+    meta = soup.find("meta", attrs={"name": "description"})
+    if meta and meta.get("content"):
+        meta_desc = meta["content"].strip()
+
+    # Remove noise
+    for tag in soup(["script", "style", "nav", "footer", "header", "noscript", "iframe"]):
         tag.decompose()
 
-    content = soup.get_text(separator=" ", strip=True)
-    word_count = len(content.split())
+    body_text = soup.get_text(separator=" ", strip=True)
 
-    # Extract all links
+    # Build rich content block
+    content_parts = []
+    if meta_desc:
+        content_parts.append(f"[META] {meta_desc}")
+    if headings:
+        content_parts.append("[HEADINGS]\n" + "\n".join(headings))
+    content_parts.append("[BODY]\n" + body_text)
+
+    full_content = "\n\n".join(content_parts)
+    word_count = len(body_text.split())
+
+    # Extract links
     links = []
+    seen = set()
     for a_tag in soup.find_all("a", href=True):
         href = a_tag["href"].strip()
         anchor = a_tag.get_text(strip=True)
         absolute = urljoin(base_url, href)
-
-        # Only keep http/https links
         parsed = urlparse(absolute)
-        if parsed.scheme in ("http", "https"):
+
+        if parsed.scheme in ("http", "https") and absolute not in seen:
+            seen.add(absolute)
             links.append({
                 "url": absolute,
                 "anchor_text": anchor[:200] if anchor else ""
@@ -34,7 +57,7 @@ def parse_page(html: str, base_url: str) -> dict:
 
     return {
         "title": title[:500],
-        "content": content[:50000],  # cap at 50k chars
+        "content": full_content[:50000],
         "word_count": word_count,
         "links": links
     }

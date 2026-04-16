@@ -1,22 +1,29 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { deleteJob } from "@/app/lib/api";
-import { Trash2, ExternalLink } from "lucide-react";
+import { deleteJob, stopCrawl } from "../lib/api";
+import { Trash2, StopCircle } from "lucide-react";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-700",
   running: "bg-blue-100 text-blue-700",
   completed: "bg-green-100 text-green-700",
   failed: "bg-red-100 text-red-700",
+  stopped: "bg-gray-100 text-gray-600",
 };
 
-export default function JobCard({ job, onDeleted }: { job: any; onDeleted: () => void }) {
+export default function JobCard({ job, onDeleted, onStopped }: { job: any; onDeleted: () => void; onStopped: () => void }) {
   const router = useRouter();
 
   async function handleDelete(e: React.MouseEvent) {
     e.stopPropagation();
     await deleteJob(job.id);
     onDeleted();
+  }
+
+  async function handleStop(e: React.MouseEvent) {
+    e.stopPropagation();
+    await stopCrawl(job.id);
+    onStopped();
   }
 
   return (
@@ -48,9 +55,18 @@ export default function JobCard({ job, onDeleted }: { job: any; onDeleted: () =>
 
       <div className="flex justify-between items-center text-xs text-gray-400">
         <span>{new Date(job.created_at).toLocaleString()}</span>
-        <button onClick={handleDelete} className="text-red-400 hover:text-red-600 transition">
-          <Trash2 size={16} />
-        </button>
+        <div className="flex gap-2">
+          {job.status === "running" && (
+            <button onClick={handleStop} title="Stop crawl"
+              className="text-orange-400 hover:text-orange-600 transition">
+              <StopCircle size={16} />
+            </button>
+          )}
+          <button onClick={handleDelete} title="Delete job"
+            className="text-red-400 hover:text-red-600 transition">
+            <Trash2 size={16} />
+          </button>
+        </div>
       </div>
     </div>
   );

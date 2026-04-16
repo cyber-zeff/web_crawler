@@ -1,21 +1,27 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import CrawlForm from "@/app/components/CrawlForm";
-import JobCard from "@/app/components/JobCard";
-import SearchBar from "@/app/components/SearchBar";
-import { getJobs } from "@/app/lib/api";
+import CrawlForm from "./components/CrawlForm";
+import JobCard from "./components/JobCard";
+import SearchBar from "./components/SearchBar";
+import { getJobs } from "./lib/api";
 
 export default function Home() {
   const [jobs, setJobs] = useState<any[]>([]);
+  const [error, setError] = useState("");
 
   const fetchJobs = useCallback(async () => {
-    const data = await getJobs();
-    setJobs(data);
+    try {
+      const data = await getJobs();
+      setJobs(data);
+      setError("");
+    } catch {
+      setError("Connection issue — retrying...");
+    }
   }, []);
 
   useEffect(() => {
     fetchJobs();
-    const interval = setInterval(fetchJobs, 5000); // auto-refresh every 5s
+    const interval = setInterval(fetchJobs, 10000); // 10s instead of 5s
     return () => clearInterval(interval);
   }, [fetchJobs]);
 
@@ -25,10 +31,10 @@ export default function Home() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">🕷️ Web Crawler</h1>
           <p className="text-gray-500 text-sm mt-1">CN Project — Automated Data Extraction & Indexing</p>
+          {error && <p className="text-xs text-orange-500 mt-1">{error}</p>}
         </div>
 
         <CrawlForm onJobStarted={fetchJobs} />
-
         <SearchBar />
 
         <div>
@@ -38,7 +44,7 @@ export default function Home() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {jobs.map((job) => (
-                <JobCard key={job.id} job={job} onDeleted={fetchJobs} />
+                <JobCard key={job.id} job={job} onDeleted={fetchJobs} onStopped={fetchJobs} />
               ))}
             </div>
           )}

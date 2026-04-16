@@ -59,10 +59,11 @@ def get_pages(job_id: str, limit: int = 50, offset: int = 0):
 # Full-text search across pages
 @router.get("/search")
 def search_pages(q: str, job_id: str = None):
-    query = supabase.table("pages").select("id, url, title, word_count, job_id")
+    query = supabase.table("pages").select("id, url, title, word_count, job_id, content")
     if job_id:
         query = query.eq("job_id", job_id)
-    result = query.text_search("content", q, config="english").limit(20).execute()
+    # Use ilike for broad text search (works on all Supabase tiers)
+    result = query.ilike("content", f"%{q}%").limit(20).execute()
     return result.data
 
 # Export pages as JSON

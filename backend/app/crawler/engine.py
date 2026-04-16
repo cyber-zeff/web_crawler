@@ -13,7 +13,19 @@ HEADERS = {
     "Connection": "keep-alive",
 }
 
+# Global cancel registry
+_cancelled: set[str] = set()
+
+def cancel_job(job_id: str):
+    _cancelled.add(job_id)
+
+def is_cancelled(job_id: str) -> bool:
+    return job_id in _cancelled
+
 async def crawl_job(job_id: str, seed_url: str, max_depth: int, max_pages: int, delay: float):
+    # Clear any previous cancel flag
+    _cancelled.discard(job_id)
+
     supabase.table("crawl_jobs").update({
         "status": "running",
         "updated_at": datetime.utcnow().isoformat()
@@ -29,6 +41,12 @@ async def crawl_job(job_id: str, seed_url: str, max_depth: int, max_pages: int, 
 
         async with aiohttp.ClientSession(headers=HEADERS, connector=connector) as session:
             while queue and pages_crawled < max_pages:
+
+                # Check cancel flag
+                if is_cancelled(job_id):
+                    print(f"[STOPPED] Job {job_id} cancelled by user")
+                    break
+
                 url, depth = queue.pop(0)
 
                 if url in visited or depth > max_depth:
@@ -46,7 +64,6 @@ async def crawl_job(job_id: str, seed_url: str, max_depth: int, max_pages: int, 
                         content_type = response.headers.get("Content-Type", "")
                         final_url = str(response.url)
 
-                        # Handle bot blocks
                         if status_code in (403, 401, 429, 999):
                             print(f"[BLOCKED] {url} → {status_code}")
                             supabase.table("pages").upsert({
@@ -76,14 +93,11 @@ async def crawl_job(job_id: str, seed_url: str, max_depth: int, max_pages: int, 
                             }).execute()
                             continue
 
-                        # Only parse HTML
                         if "text/html" not in content_type:
                             continue
 
                         html = await response.text(errors="replace")
-
                         if not html or len(html.strip()) < 100:
-                            print(f"[EMPTY] {url}")
                             continue
 
                         parsed = parse_page(html, final_url)
@@ -100,10 +114,8 @@ async def crawl_job(job_id: str, seed_url: str, max_depth: int, max_pages: int, 
                             "crawled_at": datetime.utcnow().isoformat()
                         }).execute()
 
-                        # Save links & queue same-domain ones
                         for link in parsed["links"]:
                             target = link["url"]
-
                             supabase.table("links").upsert({
                                 "job_id": job_id,
                                 "source_url": final_url,
@@ -138,11 +150,15 @@ async def crawl_job(job_id: str, seed_url: str, max_depth: int, max_pages: int, 
 
                 await asyncio.sleep(delay)
 
+        # Final status
+        final_status = "stopped" if is_cancelled(job_id) else "completed"
+        _cancelled.discard(job_id)
+
         supabase.table("crawl_jobs").update({
-            "status": "completed",
+            "status": final_status,
             "updated_at": datetime.utcnow().isoformat()
         }).eq("id", job_id).execute()
-        print(f"[DONE] Job {job_id} — {pages_crawled} pages crawled")
+        print(f"[DONE] Job {job_id} → {final_status} ({pages_crawled} pages)")
 
     except Exception as e:
         supabase.table("crawl_jobs").update({

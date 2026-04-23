@@ -6,11 +6,11 @@ import SearchBar from "@/app/components/SearchBar";
 import Link from "next/link";
 
 const statusConfig: Record<string, { color: string; bg: string }> = {
-  pending:   { color: '#d4a017', bg: 'rgba(212,160,23,0.1)'  },
-  running:   { color: '#e8b84b', bg: 'rgba(232,184,75,0.12)' },
-  completed: { color: '#7dc99a', bg: 'rgba(125,201,154,0.1)' },
-  failed:    { color: '#e07070', bg: 'rgba(224,112,112,0.1)' },
-  stopped:   { color: '#5a5248', bg: 'rgba(90,82,72,0.15)'   },
+  pending:   { color: '#d4a017', bg: 'rgba(212,160,23,0.12)'  },
+  running:   { color: '#f0c040', bg: 'rgba(240,192,64,0.14)'  },
+  completed: { color: '#6ec98a', bg: 'rgba(110,201,138,0.12)' },
+  failed:    { color: '#e07070', bg: 'rgba(224,112,112,0.12)' },
+  stopped:   { color: '#666',    bg: 'rgba(100,100,100,0.12)' },
 };
 
 export default function JobPage() {
@@ -25,8 +25,7 @@ export default function JobPage() {
     const load = async () => {
       try {
         const [j, p] = await Promise.all([getJob(id as string), getPages(id as string)]);
-        setJob(j);
-        setPages(p);
+        setJob(j); setPages(p);
       } catch {}
     };
     load();
@@ -37,10 +36,8 @@ export default function JobPage() {
   async function handlePageClick(page: any) {
     setLoadingDetail(true);
     setSelectedPage(null);
-    try {
-      const detail = await getPageDetail(page.id);
-      setSelectedPage(detail);
-    } catch { setSelectedPage(page); }
+    try { setSelectedPage(await getPageDetail(page.id)); }
+    catch { setSelectedPage(page); }
     setLoadingDetail(false);
   }
 
@@ -54,205 +51,183 @@ export default function JobPage() {
 
   async function handleStop() {
     await stopCrawl(id as string);
-    const j = await getJob(id as string);
-    setJob(j);
+    setJob(await getJob(id as string));
   }
 
   if (!job) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '13px', color: 'var(--text-dim)' }}>
-        // loading job data...
-      </p>
-    </div>
+    <main style={{ minHeight: '100vh', background: '#0d0d0d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '13px', color: '#4a4540' }}>// loading job data...</p>
+    </main>
   );
 
   const s = statusConfig[job.status] || statusConfig.stopped;
 
-  return (
-    <main style={{ minHeight: '100vh', padding: '40px 16px' }}>
-      <div style={{ maxWidth: '960px', margin: '0 auto' }}>
+  const card = (children: React.ReactNode, extra?: React.CSSProperties) => (
+    <div style={{ background: '#161616', border: '1px solid #2a2a2a', borderRadius: '12px', padding: '24px', ...extra }}>
+      {children}
+    </div>
+  );
 
-        {/* Nav */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '36px' }}>
-          <Link href="/" style={{
-            fontFamily: 'Space Mono, monospace', fontSize: '12px', color: 'var(--text-secondary)',
-            textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px',
-            letterSpacing: '0.05em'
-          }}>
+  const sectionLabel = (text: string) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
+      <span style={{ fontFamily: 'Space Mono, monospace', fontSize: '11px', fontWeight: 700, letterSpacing: '0.16em', color: '#d4a017', textTransform: 'uppercase' }}>▸ {text}</span>
+      <div style={{ flex: 1, height: '1px', background: '#1e1e1e' }} />
+    </div>
+  );
+
+  return (
+    <main style={{ minHeight: '100vh', background: '#0d0d0d', padding: '40px 20px' }}>
+      <div style={{ maxWidth: '980px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+
+        {/* Nav bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '20px', borderBottom: '1px solid #1e1e1e' }}>
+          <Link href="/" style={{ fontFamily: 'Space Mono, monospace', fontSize: '11px', color: '#7a7060', textDecoration: 'none', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '8px' }}>
             ← BACK
           </Link>
           <div style={{ display: 'flex', gap: '10px' }}>
             {job.status === 'running' && (
               <button onClick={handleStop} style={{
-                padding: '8px 16px', borderRadius: '6px', border: '1px solid rgba(212,160,23,0.4)',
-                background: 'var(--amber-glow)', color: 'var(--amber)',
-                fontFamily: 'Space Mono, monospace', fontSize: '11px', fontWeight: 700,
-                letterSpacing: '0.1em', cursor: 'pointer', textTransform: 'uppercase'
-              }}>STOP JOB</button>
+                padding: '8px 18px', borderRadius: '6px',
+                border: '1px solid rgba(212,160,23,0.4)', background: 'rgba(212,160,23,0.08)',
+                color: '#d4a017', fontFamily: 'Space Mono, monospace', fontSize: '11px',
+                fontWeight: 700, letterSpacing: '0.1em', cursor: 'pointer', textTransform: 'uppercase'
+              }}>■ STOP JOB</button>
             )}
             <button onClick={handleExport} style={{
-              padding: '8px 16px', borderRadius: '6px', border: '1px solid rgba(125,201,154,0.3)',
-              background: 'rgba(125,201,154,0.08)', color: '#7dc99a',
-              fontFamily: 'Space Mono, monospace', fontSize: '11px', fontWeight: 700,
-              letterSpacing: '0.1em', cursor: 'pointer', textTransform: 'uppercase'
-            }}>EXPORT JSON</button>
+              padding: '8px 18px', borderRadius: '6px',
+              border: '1px solid rgba(110,201,138,0.35)', background: 'rgba(110,201,138,0.08)',
+              color: '#6ec98a', fontFamily: 'Space Mono, monospace', fontSize: '11px',
+              fontWeight: 700, letterSpacing: '0.1em', cursor: 'pointer', textTransform: 'uppercase'
+            }}>↓ EXPORT JSON</button>
           </div>
         </div>
 
-        {/* Job header */}
-        <div style={{
-          background: 'var(--black-2)', border: '1px solid var(--amber-border)',
-          borderRadius: '12px', padding: '24px', marginBottom: '20px',
-          boxShadow: '0 0 30px rgba(212,160,23,0.05)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px', gap: '16px' }}>
-            <div>
-              <p style={{ fontSize: '11px', fontFamily: 'Space Mono, monospace', color: 'var(--text-dim)', marginBottom: '6px', letterSpacing: '0.08em' }}>SEED URL</p>
-              <p style={{ fontSize: '14px', fontFamily: 'Space Mono, monospace', color: 'var(--amber-light)', wordBreak: 'break-all' }}>{job.seed_url}</p>
-            </div>
-            <div style={{ padding: '4px 10px', borderRadius: '4px', background: s.bg, border: `1px solid ${s.color}44`, whiteSpace: 'nowrap' }}>
-              <span style={{ fontSize: '10px', fontFamily: 'Space Mono, monospace', color: s.color, fontWeight: 700, letterSpacing: '0.1em' }}>
-                {job.status.toUpperCase()}
-              </span>
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-            {[
-              { label: 'PAGES CRAWLED', value: job.pages_crawled },
-              { label: 'MAX DEPTH',     value: job.max_depth     },
-              { label: 'PAGE LIMIT',    value: job.max_pages     },
-              { label: 'DELAY (S)',     value: job.delay         },
-            ].map(({ label, value }) => (
-              <div key={label} style={{ background: 'var(--black-3)', borderRadius: '8px', padding: '14px', border: '1px solid var(--black-4)', textAlign: 'center' }}>
-                <p style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Space Mono, monospace' }}>{value}</p>
-                <p style={{ fontSize: '9px', color: 'var(--text-dim)', letterSpacing: '0.1em', marginTop: '4px' }}>{label}</p>
+        {/* Job overview */}
+        {card(
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', gap: '16px' }}>
+              <div>
+                <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '10px', color: '#4a4540', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '6px' }}>SEED URL</p>
+                <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '13px', color: '#c8a84a', wordBreak: 'break-all' }}>{job.seed_url}</p>
               </div>
-            ))}
-          </div>
-        </div>
+              <div style={{ padding: '4px 12px', borderRadius: '20px', background: s.bg, border: `1px solid ${s.color}44`, flexShrink: 0 }}>
+                <span style={{ fontFamily: 'Space Mono, monospace', fontSize: '10px', color: s.color, fontWeight: 700, letterSpacing: '0.1em' }}>
+                  {job.status.toUpperCase()}
+                </span>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+              {[
+                { label: 'PAGES CRAWLED', value: job.pages_crawled },
+                { label: 'MAX DEPTH',     value: job.max_depth     },
+                { label: 'PAGE LIMIT',    value: job.max_pages     },
+                { label: 'DELAY (S)',     value: job.delay         },
+              ].map(({ label, value }) => (
+                <div key={label} style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '14px 10px', textAlign: 'center' }}>
+                  <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '22px', fontWeight: 700, color: '#f0ece0' }}>{value}</p>
+                  <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '9px', color: '#5a5248', letterSpacing: '0.1em', marginTop: '5px' }}>{label}</p>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Search */}
-        <div style={{
-          background: 'var(--black-2)', border: '1px solid var(--black-5)',
-          borderRadius: '12px', padding: '24px', marginBottom: '20px'
-        }}>
-          <p style={{ fontSize: '11px', fontFamily: 'Space Mono, monospace', color: 'var(--amber)', letterSpacing: '0.12em', fontWeight: 700, marginBottom: '16px', textTransform: 'uppercase' }}>
-            ▸ Search This Job
-          </p>
-          <SearchBar jobId={id as string} />
-        </div>
+        {card(<>{sectionLabel('Search This Job')}<SearchBar jobId={id as string} /></>)}
 
-        {/* Pages list */}
-        <div style={{ background: 'var(--black-2)', border: '1px solid var(--black-5)', borderRadius: '12px', padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-            <p style={{ fontSize: '11px', fontFamily: 'Space Mono, monospace', color: 'var(--amber)', letterSpacing: '0.12em', fontWeight: 700, textTransform: 'uppercase' }}>
-              ▸ Crawled Pages
-            </p>
-            <span style={{ fontSize: '11px', fontFamily: 'Space Mono, monospace', color: 'var(--text-dim)' }}>({pages.length})</span>
-            <div style={{ flex: 1, height: '1px', background: 'var(--black-4)' }} />
-            <span style={{ fontSize: '10px', fontFamily: 'Space Mono, monospace', color: 'var(--text-dim)' }}>click row to inspect</span>
-          </div>
-
-          {/* Table header */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 60px 70px', gap: '12px', padding: '8px 12px', marginBottom: '4px' }}>
-            {['PAGE', 'CODE', 'DEPTH', 'WORDS'].map(h => (
-              <p key={h} style={{ fontSize: '9px', fontFamily: 'Space Mono, monospace', color: 'var(--text-dim)', letterSpacing: '0.1em', textAlign: h === 'PAGE' ? 'left' : 'center' }}>{h}</p>
-            ))}
-          </div>
-
-          <div style={{ maxHeight: '480px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            {pages.map((p) => (
-              <div key={p.id} onClick={() => handlePageClick(p)} style={{
-                display: 'grid', gridTemplateColumns: '1fr 60px 60px 70px', gap: '12px',
-                padding: '10px 12px', borderRadius: '6px', cursor: 'pointer',
-                border: '1px solid transparent', transition: 'all 0.15s', alignItems: 'center'
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLDivElement).style.background = 'var(--black-3)';
-                (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--black-5)';
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLDivElement).style.background = 'transparent';
-                (e.currentTarget as HTMLDivElement).style.borderColor = 'transparent';
-              }}>
-                <div style={{ minWidth: 0 }}>
-                  <p style={{ fontSize: '12px', fontFamily: 'Space Mono, monospace', color: 'var(--amber-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {p.title || '(no title)'}
+        {/* Pages table */}
+        {card(
+          <>
+            {sectionLabel(`Crawled Pages (${pages.length})`)}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 56px 56px 70px', gap: '12px', padding: '0 10px 10px', borderBottom: '1px solid #1e1e1e', marginBottom: '6px' }}>
+              {['PAGE TITLE / URL', 'CODE', 'DEPTH', 'WORDS'].map(h => (
+                <p key={h} style={{ fontFamily: 'Space Mono, monospace', fontSize: '9px', color: '#4a4540', letterSpacing: '0.1em', textAlign: h === 'PAGE TITLE / URL' ? 'left' : 'center' }}>{h}</p>
+              ))}
+            </div>
+            <div style={{ maxHeight: '460px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              {pages.length === 0 && (
+                <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '11px', color: '#3a3530', padding: '20px 10px' }}>// no pages crawled yet</p>
+              )}
+              {pages.map(p => (
+                <div key={p.id} onClick={() => handlePageClick(p)} style={{
+                  display: 'grid', gridTemplateColumns: '1fr 56px 56px 70px', gap: '12px',
+                  padding: '10px 10px', borderRadius: '6px', cursor: 'pointer',
+                  border: '1px solid transparent', transition: 'all 0.15s', alignItems: 'center'
+                }}
+                onMouseEnter={e => {
+                  const el = e.currentTarget as HTMLDivElement;
+                  el.style.background = '#1e1e1e';
+                  el.style.borderColor = '#2a2a2a';
+                }}
+                onMouseLeave={e => {
+                  const el = e.currentTarget as HTMLDivElement;
+                  el.style.background = 'transparent';
+                  el.style.borderColor = 'transparent';
+                }}>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '12px', color: '#c8a84a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {p.title || '(no title)'}
+                    </p>
+                    <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '10px', color: '#4a4540', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
+                      {p.url}
+                    </p>
+                  </div>
+                  <p style={{ textAlign: 'center', fontFamily: 'Space Mono, monospace', fontSize: '12px', fontWeight: 700, color: p.status_code === 200 ? '#6ec98a' : '#e07070' }}>
+                    {p.status_code}
                   </p>
-                  <p style={{ fontSize: '10px', color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
-                    {p.url}
-                  </p>
+                  <p style={{ textAlign: 'center', fontFamily: 'Space Mono, monospace', fontSize: '12px', color: '#7a7060' }}>{p.depth}</p>
+                  <p style={{ textAlign: 'center', fontFamily: 'Space Mono, monospace', fontSize: '12px', color: '#7a7060' }}>{p.word_count}</p>
                 </div>
-                <p style={{ textAlign: 'center', fontSize: '11px', fontFamily: 'Space Mono, monospace', color: p.status_code === 200 ? '#7dc99a' : '#e07070', fontWeight: 700 }}>
-                  {p.status_code}
-                </p>
-                <p style={{ textAlign: 'center', fontSize: '11px', fontFamily: 'Space Mono, monospace', color: 'var(--text-secondary)' }}>
-                  {p.depth}
-                </p>
-                <p style={{ textAlign: 'center', fontSize: '11px', fontFamily: 'Space Mono, monospace', color: 'var(--text-secondary)' }}>
-                  {p.word_count}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Loading overlay */}
       {loadingDetail && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'var(--black-2)', border: '1px solid var(--amber-border)', borderRadius: '10px', padding: '20px 32px' }}>
-            <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '12px', color: 'var(--amber)' }}>// loading page data...</p>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#161616', border: '1px solid rgba(212,160,23,0.3)', borderRadius: '10px', padding: '20px 32px' }}>
+            <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '12px', color: '#d4a017' }}>// loading page data...</p>
           </div>
         </div>
       )}
 
       {/* Page detail modal */}
       {selectedPage && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
           onClick={() => setSelectedPage(null)}>
           <div style={{
-            background: 'var(--black-2)', border: '1px solid var(--amber-border)',
-            borderRadius: '14px', width: '100%', maxWidth: '680px', maxHeight: '85vh',
-            display: 'flex', flexDirection: 'column',
-            boxShadow: '0 0 60px rgba(212,160,23,0.15)'
+            background: '#161616', border: '1px solid rgba(212,160,23,0.25)', borderRadius: '14px',
+            width: '100%', maxWidth: '700px', maxHeight: '85vh', display: 'flex', flexDirection: 'column',
+            boxShadow: '0 0 60px rgba(212,160,23,0.12)'
           }} onClick={e => e.stopPropagation()}>
 
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--black-4)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #222', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
               <div style={{ minWidth: 0 }}>
-                <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px', fontFamily: 'Syne, sans-serif' }}>
+                <p style={{ fontFamily: 'Syne, sans-serif', fontSize: '15px', fontWeight: 700, color: '#f0ece0', marginBottom: '5px' }}>
                   {selectedPage.title || '(no title)'}
                 </p>
-                <a href={selectedPage.url} target="_blank" rel="noopener noreferrer" style={{
-                  fontSize: '11px', fontFamily: 'Space Mono, monospace', color: 'var(--amber)',
-                  textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                }}>
+                <a href={selectedPage.url} target="_blank" rel="noopener noreferrer"
+                  style={{ fontFamily: 'Space Mono, monospace', fontSize: '10px', color: '#d4a017', textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   ↗ {selectedPage.url}
                 </a>
               </div>
-              <button onClick={() => setSelectedPage(null)} style={{
-                background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '18px', lineHeight: 1, flexShrink: 0
-              }}>✕</button>
+              <button onClick={() => setSelectedPage(null)} style={{ background: 'none', border: 'none', color: '#4a4540', cursor: 'pointer', fontSize: '20px', lineHeight: 1, flexShrink: 0, padding: '0 4px' }}>✕</button>
             </div>
 
-            <div style={{ display: 'flex', gap: '20px', padding: '12px 24px', background: 'var(--black-3)', borderBottom: '1px solid var(--black-4)' }}>
+            <div style={{ display: 'flex', gap: '24px', padding: '12px 24px', background: '#111', borderBottom: '1px solid #222' }}>
               {[
-                { label: 'STATUS', value: selectedPage.status_code, color: selectedPage.status_code === 200 ? '#7dc99a' : '#e07070' },
-                { label: 'DEPTH',  value: selectedPage.depth,       color: 'var(--text-primary)' },
-                { label: 'WORDS',  value: selectedPage.word_count,  color: 'var(--text-primary)' },
+                { label: 'STATUS', value: selectedPage.status_code, color: selectedPage.status_code === 200 ? '#6ec98a' : '#e07070' },
+                { label: 'DEPTH',  value: selectedPage.depth,       color: '#f0ece0' },
+                { label: 'WORDS',  value: selectedPage.word_count,  color: '#f0ece0' },
+                { label: 'CRAWLED AT', value: new Date(selectedPage.crawled_at).toLocaleString(), color: '#7a7060' },
               ].map(({ label, value, color }) => (
                 <div key={label}>
-                  <p style={{ fontSize: '9px', fontFamily: 'Space Mono, monospace', color: 'var(--text-dim)', letterSpacing: '0.1em', marginBottom: '2px' }}>{label}</p>
-                  <p style={{ fontSize: '14px', fontFamily: 'Space Mono, monospace', fontWeight: 700, color }}>{value}</p>
+                  <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '9px', color: '#4a4540', letterSpacing: '0.1em', marginBottom: '3px' }}>{label}</p>
+                  <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '13px', fontWeight: 700, color }}>{value}</p>
                 </div>
               ))}
-              <div>
-                <p style={{ fontSize: '9px', fontFamily: 'Space Mono, monospace', color: 'var(--text-dim)', letterSpacing: '0.1em', marginBottom: '2px' }}>CRAWLED AT</p>
-                <p style={{ fontSize: '11px', fontFamily: 'Space Mono, monospace', color: 'var(--text-secondary)' }}>
-                  {new Date(selectedPage.crawled_at).toLocaleString()}
-                </p>
-              </div>
             </div>
 
             <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>
@@ -263,20 +238,20 @@ export default function JobPage() {
                   return (
                     <div key={i} style={{ marginBottom: '20px' }}>
                       {label && (
-                        <p style={{ fontSize: '9px', fontFamily: 'Space Mono, monospace', color: 'var(--amber)', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '8px', textTransform: 'uppercase' }}>
+                        <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '9px', color: '#d4a017', letterSpacing: '0.16em', fontWeight: 700, marginBottom: '10px', textTransform: 'uppercase' }}>
                           ▸ {label}
                         </p>
                       )}
-                      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-wrap', fontFamily: label === 'HEADINGS' ? 'Space Mono, monospace' : 'Syne, sans-serif' }}>
-                        {text}
-                      </p>
+                      <p style={{
+                        fontSize: '13px', color: '#b0a898', lineHeight: 1.75,
+                        whiteSpace: 'pre-wrap',
+                        fontFamily: label === 'HEADINGS' ? 'Space Mono, monospace' : 'Syne, sans-serif'
+                      }}>{text}</p>
                     </div>
                   );
                 })
               ) : (
-                <p style={{ fontSize: '12px', fontFamily: 'Space Mono, monospace', color: 'var(--text-dim)' }}>
-                  // no content extracted
-                </p>
+                <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '12px', color: '#3a3530' }}>// no content extracted</p>
               )}
             </div>
           </div>

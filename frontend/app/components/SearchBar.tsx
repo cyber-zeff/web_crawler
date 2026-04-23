@@ -20,57 +20,60 @@ export default function SearchBar({ jobId }: { jobId?: string }) {
 
   return (
     <div>
-      <form onSubmit={handleSearch} style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+      <form onSubmit={handleSearch} style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
         <div style={{ flex: 1, position: 'relative' }}>
           <span style={{
-            position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
-            fontFamily: 'Space Mono, monospace', fontSize: '12px', color: 'var(--amber)', pointerEvents: 'none'
-          }}>{'>'}</span>
-          <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
+            position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)',
+            fontFamily: 'Space Mono, monospace', fontSize: '14px', color: '#d4a017', pointerEvents: 'none', lineHeight: 1
+          }}>›</span>
+          <input
+            type="text" value={query} onChange={e => setQuery(e.target.value)}
             placeholder="search extracted content..."
             style={{
-              width: '100%', paddingLeft: '32px', paddingRight: '16px', paddingTop: '11px', paddingBottom: '11px',
-              background: 'var(--black-3)', border: '1px solid var(--black-5)',
-              borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px',
-              fontFamily: 'Space Mono, monospace', outline: 'none', transition: 'border 0.2s'
+              width: '100%', paddingLeft: '30px', paddingRight: '14px',
+              paddingTop: '11px', paddingBottom: '11px',
+              background: '#1e1e1e', border: '1px solid #333',
+              borderRadius: '8px', color: '#f0ece0',
+              fontSize: '13px', fontFamily: 'Space Mono, monospace',
+              outline: 'none', transition: 'border 0.2s'
             }}
-            onFocus={e => (e.target.style.borderColor = 'var(--amber)')}
-            onBlur={e => (e.target.style.borderColor = 'var(--black-5)')}
+            onFocus={e => e.target.style.borderColor = '#d4a017'}
+            onBlur={e => e.target.style.borderColor = '#333'}
           />
         </div>
         <button type="submit" disabled={loading} style={{
-          padding: '11px 20px', borderRadius: '8px', border: '1px solid var(--amber-border)',
-          background: 'var(--amber-glow)', color: 'var(--amber)', fontFamily: 'Space Mono, monospace',
-          fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', cursor: 'pointer',
-          textTransform: 'uppercase', transition: 'all 0.2s'
+          padding: '11px 18px', borderRadius: '8px',
+          border: '1px solid rgba(212,160,23,0.4)',
+          background: 'rgba(212,160,23,0.1)', color: '#d4a017',
+          fontFamily: 'Space Mono, monospace', fontSize: '11px', fontWeight: 700,
+          letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer',
+          transition: 'all 0.2s', whiteSpace: 'nowrap'
         }}>
           {loading ? '...' : 'QUERY'}
         </button>
       </form>
 
       {searched && results.length === 0 && (
-        <p style={{ fontSize: '12px', fontFamily: 'Space Mono, monospace', color: 'var(--text-dim)', padding: '12px' }}>
+        <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '11px', color: '#5a5248', padding: '8px 4px' }}>
           // no results found for "{query}"
         </p>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {results.map((r) => (
+        {results.map(r => (
           <div key={r.id} style={{
-            background: 'var(--black-3)', borderRadius: '8px', padding: '14px 16px',
-            border: '1px solid var(--black-4)', transition: 'border 0.2s'
+            background: '#1e1e1e', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '14px 16px',
+            transition: 'border 0.2s'
           }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--amber-border)')}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--black-4)')}>
+          onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(212,160,23,0.3)')}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = '#2a2a2a')}>
             <a href={r.url} target="_blank" rel="noopener noreferrer" style={{
-              display: 'block', fontSize: '13px', fontFamily: 'Space Mono, monospace',
-              color: 'var(--amber-light)', textDecoration: 'none', marginBottom: '4px',
+              display: 'block', fontFamily: 'Space Mono, monospace', fontSize: '12px',
+              color: '#c8a84a', textDecoration: 'none', marginBottom: '4px',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-            }}>
-              {r.title || r.url}
-            </a>
-            <p style={{ fontSize: '11px', color: 'var(--text-dim)', fontFamily: 'Space Mono, monospace', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.url}</p>
-            <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{r.word_count} words indexed</p>
+            }}>{r.title || r.url}</a>
+            <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '10px', color: '#4a4540', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.url}</p>
+            <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '10px', color: '#7a7060' }}>{r.word_count} words indexed</p>
           </div>
         ))}
       </div>

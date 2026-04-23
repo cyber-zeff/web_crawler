@@ -2,12 +2,12 @@
 import { useRouter } from "next/navigation";
 import { deleteJob, stopCrawl } from "../lib/api";
 
-const statusConfig: Record<string, { color: string; bg: string; dot: string; label: string }> = {
-  pending:   { color: '#d4a017', bg: 'rgba(212,160,23,0.1)',  dot: '#d4a017', label: 'PENDING'   },
-  running:   { color: '#e8b84b', bg: 'rgba(232,184,75,0.12)', dot: '#e8b84b', label: 'RUNNING'   },
-  completed: { color: '#7dc99a', bg: 'rgba(125,201,154,0.1)', dot: '#7dc99a', label: 'COMPLETED' },
-  failed:    { color: '#e07070', bg: 'rgba(224,112,112,0.1)', dot: '#e07070', label: 'FAILED'    },
-  stopped:   { color: '#5a5248', bg: 'rgba(90,82,72,0.15)',   dot: '#5a5248', label: 'STOPPED'   },
+const statusConfig: Record<string, { color: string; bg: string; glow: string }> = {
+  pending:   { color: '#d4a017', bg: 'rgba(212,160,23,0.12)',  glow: '#d4a017' },
+  running:   { color: '#f0c040', bg: 'rgba(240,192,64,0.14)',  glow: '#f0c040' },
+  completed: { color: '#6ec98a', bg: 'rgba(110,201,138,0.12)', glow: '#6ec98a' },
+  failed:    { color: '#e07070', bg: 'rgba(224,112,112,0.12)', glow: '#e07070' },
+  stopped:   { color: '#666',    bg: 'rgba(100,100,100,0.12)', glow: '#666'    },
 };
 
 export default function JobCard({ job, onDeleted, onStopped }: { job: any; onDeleted: () => void; onStopped: () => void }) {
@@ -28,43 +28,41 @@ export default function JobCard({ job, onDeleted, onStopped }: { job: any; onDel
   }
 
   return (
-    <div onClick={() => router.push(`/jobs/${job.id}`)} style={{
-      background: 'var(--black-2)',
-      border: '1px solid var(--black-5)',
-      borderRadius: '12px',
-      padding: '20px',
-      cursor: 'pointer',
-      transition: 'all 0.2s',
-      position: 'relative',
-      overflow: 'hidden'
-    }}
-    onMouseEnter={e => {
-      (e.currentTarget as HTMLDivElement).style.border = '1px solid var(--amber-border)';
-      (e.currentTarget as HTMLDivElement).style.boxShadow = '0 0 24px rgba(212,160,23,0.08)';
-    }}
-    onMouseLeave={e => {
-      (e.currentTarget as HTMLDivElement).style.border = '1px solid var(--black-5)';
-      (e.currentTarget as HTMLDivElement).style.boxShadow = 'none';
-    }}>
-
-      {/* Top accent line */}
+    <div
+      onClick={() => router.push(`/jobs/${job.id}`)}
+      style={{
+        background: '#161616', border: '1px solid #2a2a2a', borderRadius: '12px',
+        padding: '20px', cursor: 'pointer', transition: 'all 0.2s', position: 'relative', overflow: 'hidden'
+      }}
+      onMouseEnter={e => {
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.borderColor = '#3a3020';
+        el.style.boxShadow = '0 0 28px rgba(212,160,23,0.1)';
+        el.style.transform = 'translateY(-1px)';
+      }}
+      onMouseLeave={e => {
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.borderColor = '#2a2a2a';
+        el.style.boxShadow = 'none';
+        el.style.transform = 'translateY(0)';
+      }}
+    >
       {job.status === 'running' && (
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, height: '2px',
-          background: 'linear-gradient(90deg, transparent, var(--amber), transparent)',
-          animation: 'pulse 2s ease-in-out infinite'
+          background: 'linear-gradient(90deg, transparent, #d4a017, transparent)',
+          animation: 'pulse-line 2s ease-in-out infinite'
         }} />
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-        <p style={{ fontSize: '12px', fontFamily: 'Space Mono, monospace', color: 'var(--amber-light)', maxWidth: '65%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', gap: '10px' }}>
+        <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '11px', color: '#c8a84a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '65%' }}>
           {job.seed_url}
         </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '3px 8px', borderRadius: '4px', background: s.bg, border: `1px solid ${s.color}33` }}>
-          <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: s.dot,
-            boxShadow: job.status === 'running' ? `0 0 6px ${s.dot}` : 'none' }} />
-          <span style={{ fontSize: '10px', fontFamily: 'Space Mono, monospace', color: s.color, fontWeight: 700, letterSpacing: '0.08em' }}>
-            {s.label}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '3px 9px', borderRadius: '20px', background: s.bg, border: `1px solid ${s.color}44`, flexShrink: 0 }}>
+          <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: s.color, display: 'inline-block', boxShadow: job.status === 'running' ? `0 0 6px ${s.glow}` : 'none' }} />
+          <span style={{ fontFamily: 'Space Mono, monospace', fontSize: '9px', color: s.color, fontWeight: 700, letterSpacing: '0.1em' }}>
+            {job.status.toUpperCase()}
           </span>
         </div>
       </div>
@@ -75,34 +73,34 @@ export default function JobCard({ job, onDeleted, onStopped }: { job: any; onDel
           { label: 'DEPTH',   value: job.max_depth },
           { label: 'LIMIT',   value: job.max_pages },
         ].map(({ label, value }) => (
-          <div key={label} style={{ background: 'var(--black-3)', borderRadius: '6px', padding: '10px 8px', textAlign: 'center', border: '1px solid var(--black-4)' }}>
-            <p style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Space Mono, monospace' }}>{value}</p>
-            <p style={{ fontSize: '9px', color: 'var(--text-dim)', letterSpacing: '0.1em', marginTop: '2px' }}>{label}</p>
+          <div key={label} style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '10px 8px', textAlign: 'center' }}>
+            <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '20px', fontWeight: 700, color: '#f0ece0' }}>{value}</p>
+            <p style={{ fontFamily: 'Space Mono, monospace', fontSize: '9px', color: '#5a5248', letterSpacing: '0.1em', marginTop: '3px' }}>{label}</p>
           </div>
         ))}
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: '10px', fontFamily: 'Space Mono, monospace', color: 'var(--text-dim)' }}>
+        <span style={{ fontFamily: 'Space Mono, monospace', fontSize: '10px', color: '#4a4540' }}>
           {new Date(job.created_at).toLocaleString()}
         </span>
         <div style={{ display: 'flex', gap: '8px' }}>
           {job.status === 'running' && (
-            <button onClick={handleStop} title="Stop crawl" style={{
-              padding: '4px 10px', borderRadius: '4px', border: '1px solid rgba(212,160,23,0.4)',
-              background: 'transparent', color: 'var(--amber)', fontSize: '10px',
-              fontFamily: 'Space Mono, monospace', cursor: 'pointer', letterSpacing: '0.05em'
+            <button onClick={handleStop} style={{
+              padding: '4px 12px', borderRadius: '4px',
+              border: '1px solid rgba(212,160,23,0.4)', background: 'transparent',
+              color: '#d4a017', fontFamily: 'Space Mono, monospace', fontSize: '10px',
+              fontWeight: 700, letterSpacing: '0.08em', cursor: 'pointer'
             }}>STOP</button>
           )}
-          <button onClick={handleDelete} title="Delete" style={{
-            padding: '4px 10px', borderRadius: '4px', border: '1px solid rgba(224,112,112,0.3)',
-            background: 'transparent', color: 'var(--error-text)', fontSize: '10px',
-            fontFamily: 'Space Mono, monospace', cursor: 'pointer', letterSpacing: '0.05em'
+          <button onClick={handleDelete} style={{
+            padding: '4px 12px', borderRadius: '4px',
+            border: '1px solid rgba(224,112,112,0.35)', background: 'transparent',
+            color: '#e07070', fontFamily: 'Space Mono, monospace', fontSize: '10px',
+            fontWeight: 700, letterSpacing: '0.08em', cursor: 'pointer'
           }}>DEL</button>
         </div>
       </div>
-
-      <style>{`@keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }`}</style>
     </div>
   );
 }

@@ -72,7 +72,7 @@ cd web-crawler
 cd backend
 
 # Create virtual environment
-python -m venv venv
+py -3.12 -m venv venv
 venv\Scripts\activate  # Windows
 # source venv/bin/activate  # Linux/Mac
 
